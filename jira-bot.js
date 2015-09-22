@@ -3,7 +3,8 @@
 const Slack = require( 'slack-client' ),
 	EventEmitter = require( 'events' ).EventEmitter,
 	util = require( 'util' ),
-	log = require( 'winston' );
+	log = require( 'winston' ),
+	_ = require( 'lodash' );
 
 const JiraBot = function ( config ) { // TODO: check config
 	let self = this;
@@ -51,7 +52,7 @@ JiraBot.prototype._onMessage = function ( message ) {
 	issueKeys = text.match( self.issueKeysRegex ) || [];
 
 	if ( issueKeys.length ) {
-		issueKeys.forEach( function ( issueKey ) {
+		_.uniq( issueKeys ).forEach( function ( issueKey ) {
 			log.info( `Found Jira issue key ${issueKey} in channel #${channel.name} from user @${ user.name}` );
 			self.emit( 'ticketKeyFound', issueKey, channel );
 		} );
