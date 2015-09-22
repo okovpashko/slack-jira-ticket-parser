@@ -3,7 +3,8 @@
 const config = require( './config' ),
 	JiraTicket = require( './jira-ticket' ),
 	JiraBot = require( './jira-bot' ),
-	util = require( 'util' );
+	util = require( 'util' ),
+	log = require('winston');
 
 const onTicketFound = function ( key, channel ) {
 	jiraTicket.get( key, function ( error, ticket ) {

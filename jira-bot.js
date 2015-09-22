@@ -2,10 +2,14 @@
 
 const Slack = require( 'slack-client' ),
 	EventEmitter = require( 'events' ).EventEmitter,
-	util = require( 'util' );
+	util = require( 'util' ),
+	log = require( 'winston' );
 
 const JiraBot = function ( config ) { // TODO: check config
 	let self = this;
+
+	log.info( 'Creating new JiraBot instance' );
+
 	self.config = config;
 	EventEmitter.call( self );
 
@@ -25,7 +29,7 @@ JiraBot.prototype.login = function () {
 };
 
 JiraBot.prototype._onOpen = function () {
-	console.log( "Welcome to Slack. You are @" + this.slack.self.name + " of " + this.slack.team.name ); // TODO: log info
+	log.info( `Connected to Slack. You are @${this.slack.self.name} of ${this.slack.team.name} team` );
 };
 
 JiraBot.prototype._onMessage = function ( message ) {
@@ -41,22 +45,21 @@ JiraBot.prototype._onMessage = function ( message ) {
 	}
 
 	if ( text.match( /hello/i ) && (text.search( '<@' + slack.self.id + '>' ) !== -1) ) {
-		channel.send( util.format( '@%s hello :)', user.name ) );
+		channel.send( `@${user.name} hello :)` );
 	}
 
 	issueKeys = text.match( self.issueKeysRegex ) || [];
 
 	if ( issueKeys.length ) {
 		issueKeys.forEach( function ( issueKey ) {
-			console.log( 'Found jira ticket %s in message from user %s', issueKey, user.name ); // LOG info
-
+			log.info( `Found Jira issue key ${issueKey} in channel #${channel.name} from user @${ user.name}` );
 			self.emit( 'ticketKeyFound', issueKey, channel );
 		} );
 	}
 };
 
 JiraBot.prototype._onError = function ( error ) {
-	console.error( "Error: " + error );
+	log.error( `Slack bot error: ${util.inspect( error )}` );
 	this.emit( 'error', error );
 };
 

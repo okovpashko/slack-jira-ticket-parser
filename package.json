@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "jira": "^0.9.2",
-    "slack-client": "^1.4.1"
+    "slack-client": "^1.4.1",
+    "winston": "^1.0.1"
   }
 }
