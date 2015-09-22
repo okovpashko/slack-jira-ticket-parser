@@ -19,7 +19,7 @@ All described settings are contained in config.js file.
 
 ### slack
 - **apiToken** - api token for your bot
-- **watchTicketPrefixes** - Jira issue key prefixes to watch in messages (for example JIRA for issue keys like JIRA-1)
+- **watchTicketPrefixes** - array with Jira issue key prefixes to watch in messages (for example JIRA for issue keys like JIRA-1)
 - **allowChannels** - array with allowed channels to watch for issue keys
 - **autoReconnect** - auto reconnect to Slack after losing connection (must be true)
 - **autoMark** - auto update read message pointer for bot (must be true)
