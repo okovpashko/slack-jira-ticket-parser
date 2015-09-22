@@ -9,7 +9,6 @@ const config = require( './config' ),
 const onTicketFound = function ( key, channel ) {
 	jiraTicket.get( key, function ( error, ticket ) {
 		if ( error ) {
-			console.error( error );
 			return;
 		}
 
