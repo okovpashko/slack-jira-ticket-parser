@@ -40,7 +40,7 @@ JiraBot.prototype._onMessage = function ( message ) {
 		text = message.text,
 		issueKeys;
 
-	if ( message.type !== 'message' || user === slack.self.name || !text || self.config.allowChannels.indexOf( channel.name ) === -1 ) {
+	if ( message.type !== 'message' || user.id === slack.self.id || !text || self.config.allowChannels.indexOf( channel.name ) === -1 ) {
 		return;
 	}
 
