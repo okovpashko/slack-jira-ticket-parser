@@ -3,8 +3,7 @@
 const config = require( './config' ),
 	JiraTicket = require( './jira-ticket' ),
 	JiraBot = require( './jira-bot' ),
-	util = require( 'util' ),
-	log = require('winston');
+	log = require( 'winston' );
 
 const onTicketFound = function ( key, channel ) {
 	jiraTicket.get( key, function ( error, ticket ) {
@@ -12,8 +11,7 @@ const onTicketFound = function ( key, channel ) {
 			return;
 		}
 
-		let message = util.format( '*%s*\n>%s\n>Status: %s\n>%s', ticket.key, ticket.summary, ticket.status, ticket.url );
-		channel.send( message );
+		channel.send( `>*${ticket.key}*\n>${ticket.summary}\n>Status: ${ticket.status}\n>${ticket.url}` );
 	} );
 };
 
