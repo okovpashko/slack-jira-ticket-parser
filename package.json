@@ -1,0 +1,15 @@
+{
+  "name": "jira-slack-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Oleksandr Kovpashko",
+  "license": "ISC",
+  "dependencies": {
+    "jira": "^0.9.2",
+    "slack-client": "^1.4.1"
+  }
+}
