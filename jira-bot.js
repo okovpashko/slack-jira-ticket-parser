@@ -1,67 +1,72 @@
 'use strict';
 
-const Slack = require( 'slack-client' ),
-	EventEmitter = require( 'events' ).EventEmitter,
-	util = require( 'util' ),
-	log = require( 'winston' ),
-	_ = require( 'lodash' );
+const RtmClient = require('@slack/client').RtmClient,
+  CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS,
+  RTM_EVENTS = require('@slack/client').RTM_EVENTS,
+  MemoryDataStore = require('@slack/client').MemoryDataStore,
+  EventEmitter = require('events').EventEmitter,
+  util = require('util'),
+  log = require('winston'),
+  _ = require('lodash');
 
-const JiraBot = function ( config ) { // TODO: check config
-	let self = this;
+class JiraBot extends EventEmitter {
+  constructor(config) {
+    super();
 
-	log.info( 'Creating new JiraBot instance' );
+    log.info('Creating new JiraBot instance');
 
-	self.config = config;
-	EventEmitter.call( self );
+    this.config = config;
 
-	self.issueKeysRegex = new RegExp( '(' + config.watchTicketPrefixes.join( '|' ) + ')-\\d+', 'g' );
+    this.issueKeysRegex = new RegExp('(' + config.watchTicketPrefixes.join('|') + ')-\\d+', 'g');
 
-	self.slack = new Slack( config.apiToken, config.autoReconnect, config.autoMark );
+    this.slack = new RtmClient(config.apiToken, {
+      dataStore: new MemoryDataStore()
+    });
 
-	this.slack.on( 'open', self._onOpen.bind( self ) );
-	this.slack.on( 'message', self._onMessage.bind( self ) );
-	this.slack.on( 'error', self._onError.bind( self ) );
-};
+    this.slack.on(CLIENT_EVENTS.RTM.AUTHENTICATED, this._onOpen.bind(this));
+    this.slack.on(RTM_EVENTS.MESSAGE, this._onMessage.bind(this));
+  }
 
-util.inherits( JiraBot, EventEmitter );
+  login() {
+    this.slack.start();
+  }
 
-JiraBot.prototype.login = function () {
-	this.slack.login();
-};
+  sendMessage(...args) {
+    this.slack.sendMessage.apply(this.slack, args);
+  }
 
-JiraBot.prototype._onOpen = function () {
-	log.info( `Connected to Slack. You are @${this.slack.self.name} of ${this.slack.team.name} team` );
-};
+  _onOpen(rtmStartData) {
+    log.info(`Connected to Slack. You are @${rtmStartData.self.name} of "${rtmStartData.team.name}" team`);
+  }
 
-JiraBot.prototype._onMessage = function ( message ) {
-	let self = this,
-		slack = self.slack,
-		user = slack.getUserByID( message.user ),
-		channel = slack.getChannelGroupOrDMByID( message.channel ),
-		text = message.text,
-		issueKeys;
+  _onMessage(message) {
+    const text = message.text;
 
-	if ( message.type !== 'message' || user.id === slack.self.id || !text || self.config.allowChannels.indexOf( channel.name ) === -1 ) {
-		return;
-	}
+    const channel = this.slack.dataStore.getGroupById(message.channel);
+    const user = this.slack.dataStore.getUserById(message.user);
+    let issueKeys;
 
-	if ( text.match( /hello/i ) && (text.search( '<@' + slack.self.id + '>' ) !== -1) ) {
-		channel.send( `@${user.name} hello :)` );
-	}
+    if (message.type !== 'message'
+      || message.user === this.slack.activeUserId
+      || !text
+      || this.config.allowChannels.indexOf(channel.name) === -1) {
+      return;
+    }
 
-	issueKeys = text.match( self.issueKeysRegex ) || [];
+    if (text.match(/hello/i) && (text.search(`<@${this.slack.activeUserId}>`) !== -1)) {
+      this.slack.sendMessage(`@${user.name} hello :)`, message.channel);
+    }
 
-	if ( issueKeys.length ) {
-		_.uniq( issueKeys ).forEach( function ( issueKey ) {
-			log.info( `Found Jira issue key ${issueKey} in channel #${channel.name} from user @${ user.name}` );
-			self.emit( 'ticketKeyFound', issueKey, channel );
-		} );
-	}
-};
+    issueKeys = text.match(this.issueKeysRegex) || [];
 
-JiraBot.prototype._onError = function ( error ) {
-	log.error( `Slack bot error: ${util.inspect( error )}` );
-	this.emit( 'error', error );
-};
+    if (issueKeys.length) {
+      _.uniq(issueKeys).forEach((issueKey) => {
+        log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
+
+        this.emit('ticketKeyFound', issueKey, channel);
+      });
+    }
+  }
+}
 
 module.exports = JiraBot;

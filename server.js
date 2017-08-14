@@ -1,23 +1,22 @@
 'use strict';
 
-const config = require( './config' ),
-	JiraTicket = require( './jira-ticket' ),
-	JiraBot = require( './jira-bot' ),
-	log = require( 'winston' );
+const config = require('./config');
+const JiraTicket = require('./jira-ticket');
+const JiraBot = require('./jira-bot');
+const log = require('winston');
 
-const onTicketFound = function ( key, channel ) {
-	jiraTicket.get( key, function ( error, ticket ) {
-		if ( error ) {
-			return;
-		}
+let jiraTicket = new JiraTicket(config.jira),
+  jiraBot = new JiraBot(config.slack);
 
-		channel.send( `>*${ticket.key}*\n>${ticket.summary}\n>Status: ${ticket.status}\n>${ticket.url}` );
-	} );
-};
+jiraBot.on('ticketKeyFound', (key, channel) => {
+  jiraTicket.get(key, function(error, ticket) {
+    if (error) {
+      return;
+    }
 
-let jiraTicket = new JiraTicket( config.jira ),
-	jiraBot = new JiraBot( config.slack );
-
-jiraBot.on( 'ticketKeyFound', onTicketFound );
+    const message = `>*${ticket.key}*\n>${ticket.summary}\n>Status: ${ticket.status}\n>${ticket.url}`;
+    jiraBot.sendMessage(message, channel.id);
+  });
+});
 
 jiraBot.login();

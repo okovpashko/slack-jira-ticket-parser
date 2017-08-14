@@ -1,6 +1,6 @@
 {
   "name": "jira-slack-bot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -9,9 +9,9 @@
   "author": "Oleksandr Kovpashko",
   "license": "ISC",
   "dependencies": {
+    "@slack/client": "^3.11.0",
     "jira": "^0.9.2",
     "lodash": "^3.10.1",
-    "slack-client": "^1.5.1",
     "winston": "^1.0.1"
   }
 }
