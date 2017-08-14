@@ -35,6 +35,10 @@ class JiraBot extends EventEmitter {
     this.slack.sendMessage.apply(this.slack, args);
   }
 
+  sendTyping(...args) {
+    this.slack.sendTyping.apply(this.slack, args);
+  }
+
   _onOpen(rtmStartData) {
     log.info(`Connected to Slack. You are @${rtmStartData.self.name} of "${rtmStartData.team.name}" team`);
   }
