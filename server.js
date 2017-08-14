@@ -15,7 +15,14 @@ jiraBot.on('ticketKeyFound', (key, channel) => {
     }
 
     const message = `>*${ticket.key}*\n>${ticket.summary}\n>Status: ${ticket.status}\n>${ticket.url}`;
-    jiraBot.sendMessage(message, channel.id);
+    jiraBot.sendMessage(message, channel.id, (error) => {
+      if(error) {
+        log.error('Error while posting issue info to Slack', error);
+        return;
+      }
+
+      log.info(`Posted Jira issue info to channel #${channel.name}`);
+    });
   });
 });
 
