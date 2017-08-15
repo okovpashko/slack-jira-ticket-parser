@@ -34,6 +34,7 @@ JiraTicket.prototype.get = function ( issueKey, callback ) {
 			url    : url.format( {
 				protocol: self.config.protocol,
 				hostname: self.config.host,
+				port: self.config.port,
 				pathname: 'browse/' + issue.key
 			} )
 		};
