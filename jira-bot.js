@@ -49,7 +49,7 @@ JiraBot.prototype._onMessage = function ( message ) {
 		channel.send( `@${user.name} hello :)` );
 	}
 
-	issueKeys = text.match( self.issueKeysRegex ) || [];
+	issueKeys = text.match( self.issueKeysRegex ).reverse() || [];
 
 	if ( issueKeys.length ) {
 		_.uniq( issueKeys ).forEach( function ( issueKey ) {
