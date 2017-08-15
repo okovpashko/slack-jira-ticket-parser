@@ -61,7 +61,7 @@ class JiraBot extends EventEmitter {
       this.slack.sendMessage(`@${user.name} hello :)`, message.channel);
     }
 
-    issueKeys = text.match(this.issueKeysRegex) || [];
+    issueKeys = text.match(this.issueKeysRegex).reverse() || [];
 
     if (issueKeys.length) {
       _.uniq(issueKeys).forEach((issueKey) => {
