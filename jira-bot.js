@@ -13,13 +13,13 @@ class JiraBot extends EventEmitter {
   constructor(config) {
     super();
 
-    log.info('Creating new JiraBot instance');
+    log.debug('Creating new JiraBot instance');
 
     this.config = config;
 
     this.issueKeysRegex = new RegExp('(' + config.watchTicketPrefixes.join('|') + ')-\\d+', 'g');
 
-    this.slack = new RtmClient(config.apiToken, {
+    this.slack = new RtmClient(config.apiKey, {
       dataStore: new MemoryDataStore()
     });
 
@@ -56,7 +56,7 @@ class JiraBot extends EventEmitter {
     this._getIssueKeysFromMessage(message).forEach((issueKey) => {
       log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
 
-      this.emit('ticketKeyFound', issueKey, channel);
+      this.emit('issueKeyFound', issueKey, channel);
     });
   }
 
