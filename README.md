@@ -8,7 +8,7 @@ Slack bot for parsing Jira issues mentioning in messages and displaying its info
 - inside projects directory run `npm install` command
 - start bot `node server.js`
 
-## Configuraion options
+## Configuration options
 All options can be passed via ENV variables
  
 - **JIRA_URL** - Jira server url (required)
