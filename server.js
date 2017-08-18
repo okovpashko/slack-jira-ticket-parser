@@ -23,7 +23,7 @@ jiraBot.on('ticketKeyFound', (key, channel) => {
         return;
       }
 
-      log.info(`Posted Jira issue info to channel #${channel.name}`);
+      log.info(`Posted Jira ${ticket.key} info to channel #${channel.name}`);
     });
   });
 });
