@@ -9,4 +9,5 @@ module.exports = {
     apiKey: process.env.SLACK_API_KEY,
     channelsConfig: JSON.parse(process.env.CHANNELS_CONFIG || '{}')
   },
+  logLevel: process.env.LOG_LEVEL || 'info',
 };

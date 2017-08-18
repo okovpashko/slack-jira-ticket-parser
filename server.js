@@ -5,6 +5,8 @@ const JiraClient = require('./jira-client');
 const JiraBot = require('./jira-bot');
 const log = require('winston');
 
+log.level = config.logLevel;
+
 const jiraClient = new JiraClient(config.jira);
 const jiraBot = new JiraBot(config.slack);
 
