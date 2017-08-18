@@ -14,7 +14,6 @@ All options can be passed via ENV variables
 - **JIRA_URL** - Jira server url (required)
 - **JIRA_USER** - Jira username (required)
 - **JIRA_PASSWORD** - Jira password (required)
-- **JIRA_ISSUES_PREFIXES** - array with Jira issue key prefixes to watch in messages (for example JIRA for issue keys like JIRA-1) (required)
 - **JIRA_STRICT_SSL** - whether to check SSL certificate of Jira server. Default: `true`. Set to `false` if you have self-signed certificate. 
 - **SLACK_API_KEY** - api token for your bot (required)
-- **SLACK_ALLOWED_CHANNELS** - array with allowed channels to watch for issue keys (required)
+- **CHANNELS_CONFIG** - a JSON serialized object with channel name as a key and array with issue keys as a value. For example `{"my-channel": ["FOO", "BAR"]}`.

@@ -17,7 +17,7 @@ class JiraBot extends EventEmitter {
 
     this.config = config;
 
-    this.issueKeysRegex = new RegExp('(' + config.watchTicketPrefixes.join('|') + ')-\\d+', 'g');
+    this._generateChannelsRegexes();
 
     this.slack = new RtmClient(config.apiKey, {
       dataStore: new MemoryDataStore()
@@ -39,6 +39,19 @@ class JiraBot extends EventEmitter {
     this.slack.sendTyping.apply(this.slack, args);
   }
 
+  _generateChannelsRegexes() {
+    this._channelsRegexes = Object.getOwnPropertyNames(this.config.channelsConfig).reduce((regexes, channelName) => {
+      const channelIssueKeys = this.config.channelsConfig[channelName];
+      const channelRegex = new RegExp(`(${channelIssueKeys.join('|')})-\\d+`, 'g');
+
+      regexes[channelName] = channelRegex;
+
+      log.debug(`Adding regex "${channelRegex}" for channel "${channelName}"`);
+
+      return regexes;
+    }, {});
+  }
+
   _onOpen(rtmStartData) {
     log.info(`Connected to Slack. You are @${rtmStartData.self.name} of "${rtmStartData.team.name}" team`);
   }
@@ -47,9 +60,11 @@ class JiraBot extends EventEmitter {
     const channel = this._getChannelById(message.channel);
     const user = this.slack.dataStore.getUserById(message.user);
 
-    if (this._isSelfMessage(message) || !this._isMessageFromAllowedChannel(message) || message.text == null) {
+    if (this._isSelfMessage(message) || message.text == null) {
       return;
     }
+
+    log.debug(`Received message "${message.text}" from channel "${channel.name}"`);
 
     this._respondToHello(message);
 
@@ -64,13 +79,17 @@ class JiraBot extends EventEmitter {
     return message.user === this.slack.activeUserId;
   }
 
-  _isMessageFromAllowedChannel(message) {
-    const channel = this._getChannelById(message.channel);
-    return this.config.allowChannels.indexOf(channel.name) !== -1;
-  }
-
   _getIssueKeysFromMessage(message) {
-    return _.uniq(message.text.match(this.issueKeysRegex) || []);
+    const channel = this._getChannelById(message.channel);
+    const issuesRegex = this._channelsRegexes[channel.name];
+
+    // checking if it's a message from the configured channel
+    if (!issuesRegex) {
+      log.debug(`Regex for channel "${channel.name}" is not found`);
+      return [];
+    }
+
+    return _.uniq(message.text.match(issuesRegex) || []);
   }
 
   _respondToHello(message) {
