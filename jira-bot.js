@@ -44,32 +44,45 @@ class JiraBot extends EventEmitter {
   }
 
   _onMessage(message) {
-    const text = message.text;
-
-    const channel = this.slack.dataStore.getGroupById(message.channel);
+    const channel = this._getChannelById(message.channel);
     const user = this.slack.dataStore.getUserById(message.user);
-    let issueKeys;
 
-    if (message.type !== 'message'
-      || message.user === this.slack.activeUserId
-      || !text
-      || this.config.allowChannels.indexOf(channel.name) === -1) {
+    if (this._isSelfMessage(message) || !this._isMessageFromAllowedChannel(message) || message.text == null) {
       return;
     }
 
-    if (text.match(/hello/i) && (text.search(`<@${this.slack.activeUserId}>`) !== -1)) {
-      this.slack.sendMessage(`@${user.name} hello :)`, message.channel);
+    this._respondToHello(message);
+
+    this._getIssueKeysFromMessage(message).forEach((issueKey) => {
+      log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
+
+      this.emit('ticketKeyFound', issueKey, channel);
+    });
+  }
+
+  _isSelfMessage(message) {
+    return message.user === this.slack.activeUserId;
+  }
+
+  _isMessageFromAllowedChannel(message) {
+    const channel = this._getChannelById(message.channel);
+    return this.config.allowChannels.indexOf(channel.name) !== -1;
+  }
+
+  _getIssueKeysFromMessage(message) {
+    return _.uniq(message.text.match(this.issueKeysRegex) || []);
+  }
+
+  _respondToHello(message) {
+    if (message.text.match(/hello/i) && (message.text.search(`<@${this.slack.activeUserId}>`) !== -1)) {
+      const user = this.slack.dataStore.getUserById(message.user);
+      this.slack.sendMessage(`Hello @${user.name}!`, message.channel);
     }
+  }
 
-    issueKeys = text.match(this.issueKeysRegex) || [];
-
-    if (issueKeys.length) {
-      _.uniq(issueKeys).forEach((issueKey) => {
-        log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
-
-        this.emit('ticketKeyFound', issueKey, channel);
-      });
-    }
+  _getChannelById(channelId) {
+    const dataStore = this.slack.dataStore;
+    return dataStore.getGroupById(channelId) || dataStore.getChannelById(channelId);
   }
 }
 
