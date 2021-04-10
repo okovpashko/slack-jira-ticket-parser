@@ -4,7 +4,6 @@ const { RTMClient } = require('@slack/rtm-api');
 const { WebClient } = require('@slack/web-api');
 const EventEmitter = require('events').EventEmitter;
 const log = require('winston');
-const _ = require('lodash');
 
 class JiraBot extends EventEmitter {
   constructor(config) {
@@ -87,7 +86,10 @@ class JiraBot extends EventEmitter {
       return [];
     }
 
-    return _.uniq(message.text.match(issuesRegex) || []);
+    const matchedIssueKeys = message.text.match(issuesRegex) ?? [];
+
+    // Return only unique issue keys
+    return Array.from(new Set(matchedIssueKeys));
   }
 
   async _respondToHello(message) {
