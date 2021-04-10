@@ -26,12 +26,17 @@ class JiraBot extends EventEmitter {
     this.rtmApi.on('message', this._onMessage.bind(this));
   }
 
-  sendMessage(...args) {
-    this.rtmApi.sendMessage.apply(this.rtmApi, args);
+  sendTyping(...args) {
+    return this.rtmApi.sendTyping.apply(this.rtmApi, args);
   }
 
-  sendTyping(...args) {
-    this.rtmApi.sendTyping.apply(this.rtmApi, args);
+  async replyToMessage(message, replyBody) {
+    await this.webApi.chat.postMessage({
+      channel: message.channel,
+      thread_ts: message.thread_ts,
+      text: replyBody,
+      as_user: true,
+    });
   }
 
   _generateChannelsRegexes() {
@@ -68,7 +73,7 @@ class JiraBot extends EventEmitter {
     issueKeys.forEach((issueKey) => {
       log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
 
-      this.emit('issueKeyFound', issueKey, channel);
+      this.emit('issueKeyFound', issueKey, channel, message);
     });
   }
 
@@ -96,7 +101,7 @@ class JiraBot extends EventEmitter {
     if (message.text.match(/hello/i) && (message.text.search(`<@${this.rtmApi.activeUserId}>`) !== -1)) {
       const user = await this._getUserById(message.user);
 
-      await this.rtmApi.sendMessage(`Hello @${user.name}!`, message.channel);
+      await this.replyToMessage(message, `Hello @${user.name}!`);
     }
   }
 
