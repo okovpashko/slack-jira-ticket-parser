@@ -1,13 +1,9 @@
 'use strict';
 
-const RtmClient = require('@slack/client').RtmClient,
-  CLIENT_EVENTS = require('@slack/client').CLIENT_EVENTS,
-  RTM_EVENTS = require('@slack/client').RTM_EVENTS,
-  MemoryDataStore = require('@slack/client').MemoryDataStore,
-  EventEmitter = require('events').EventEmitter,
-  util = require('util'),
-  log = require('winston'),
-  _ = require('lodash');
+const { RTMClient } = require('@slack/rtm-api');
+const { WebClient } = require('@slack/web-api');
+const EventEmitter = require('events').EventEmitter;
+const log = require('winston');
 
 class JiraBot extends EventEmitter {
   constructor(config) {
@@ -19,24 +15,23 @@ class JiraBot extends EventEmitter {
 
     this._generateChannelsRegexes();
 
-    this.slack = new RtmClient(config.apiKey, {
-      dataStore: new MemoryDataStore()
-    });
-
-    this.slack.on(CLIENT_EVENTS.RTM.AUTHENTICATED, this._onOpen.bind(this));
-    this.slack.on(RTM_EVENTS.MESSAGE, this._onMessage.bind(this));
+    this.rtmApi = new RTMClient(config.apiKey);
+    this.webApi = new WebClient(config.apiKey);
   }
 
-  login() {
-    this.slack.start();
+  async login() {
+    const rtmInfo = await this.rtmApi.start();
+    this._onOpen(rtmInfo);
+
+    this.rtmApi.on('message', this._onMessage.bind(this));
   }
 
   sendMessage(...args) {
-    this.slack.sendMessage.apply(this.slack, args);
+    this.rtmApi.sendMessage.apply(this.rtmApi, args);
   }
 
   sendTyping(...args) {
-    this.slack.sendTyping.apply(this.slack, args);
+    this.rtmApi.sendTyping.apply(this.rtmApi, args);
   }
 
   _generateChannelsRegexes() {
@@ -56,9 +51,9 @@ class JiraBot extends EventEmitter {
     log.info(`Connected to Slack. You are @${rtmStartData.self.name} of "${rtmStartData.team.name}" team`);
   }
 
-  _onMessage(message) {
-    const channel = this._getChannelById(message.channel);
-    const user = this.slack.dataStore.getUserById(message.user);
+  async _onMessage(message) {
+    const channel = await this._getChannelById(message.channel);
+    const user = await this._getUserById(message.user);
 
     if (this._isSelfMessage(message) || message.text == null) {
       return;
@@ -66,9 +61,11 @@ class JiraBot extends EventEmitter {
 
     log.debug(`Received message "${message.text}" from channel "${channel.name}"`);
 
-    this._respondToHello(message);
+    await this._respondToHello(message);
 
-    this._getIssueKeysFromMessage(message).forEach((issueKey) => {
+    const issueKeys = await this._getIssueKeysFromMessage(message);
+
+    issueKeys.forEach((issueKey) => {
       log.info(`Found Jira issue key ${issueKey} in channel #${channel.name} from user @${user.name}`);
 
       this.emit('issueKeyFound', issueKey, channel);
@@ -76,11 +73,11 @@ class JiraBot extends EventEmitter {
   }
 
   _isSelfMessage(message) {
-    return message.user === this.slack.activeUserId;
+    return message.user === this.rtmApi.activeUserId;
   }
 
-  _getIssueKeysFromMessage(message) {
-    const channel = this._getChannelById(message.channel);
+  async _getIssueKeysFromMessage(message) {
+    const channel = await this._getChannelById(message.channel);
     const issuesRegex = this._channelsRegexes[channel.name];
 
     // checking if it's a message from the configured channel
@@ -89,19 +86,28 @@ class JiraBot extends EventEmitter {
       return [];
     }
 
-    return _.uniq(message.text.match(issuesRegex) || []);
+    const matchedIssueKeys = message.text.match(issuesRegex) ?? [];
+
+    // Return only unique issue keys
+    return Array.from(new Set(matchedIssueKeys));
   }
 
-  _respondToHello(message) {
-    if (message.text.match(/hello/i) && (message.text.search(`<@${this.slack.activeUserId}>`) !== -1)) {
-      const user = this.slack.dataStore.getUserById(message.user);
-      this.slack.sendMessage(`Hello @${user.name}!`, message.channel);
+  async _respondToHello(message) {
+    if (message.text.match(/hello/i) && (message.text.search(`<@${this.rtmApi.activeUserId}>`) !== -1)) {
+      const user = await this._getUserById(message.user);
+
+      await this.rtmApi.sendMessage(`Hello @${user.name}!`, message.channel);
     }
   }
 
-  _getChannelById(channelId) {
-    const dataStore = this.slack.dataStore;
-    return dataStore.getGroupById(channelId) || dataStore.getChannelById(channelId);
+  async _getUserById(userId) {
+    const response = await this.webApi.users.info({user: userId});
+    return response.user;
+  }
+
+  async _getChannelById(channelId) {
+    const response = await this.webApi.conversations.info({channel: channelId});
+    return response.channel;
   }
 }
 
