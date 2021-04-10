@@ -57,17 +57,16 @@ class JiraBot extends EventEmitter {
   }
 
   async _onMessage(message) {
-    const channel = await this._getChannelById(message.channel);
-    const user = await this._getUserById(message.user);
-
-    if (this._isSelfMessage(message) || message.text == null) {
+    if (this._isSelfMessage(message) || message.text == null || !message.user) {
       return;
     }
 
+    const channel = await this._getChannelById(message.channel);
     log.debug(`Received message "${message.text}" from channel "${channel.name}"`);
 
     await this._respondToHello(message);
 
+    const user = await this._getUserById(message.user);
     const issueKeys = await this._getIssueKeysFromMessage(message);
 
     issueKeys.forEach((issueKey) => {
