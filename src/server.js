@@ -3,13 +3,15 @@
 const defaultConfig = require('./default-config');
 const JiraClient = require('./jira-client');
 const JiraBot = require('./jira-bot');
-const log = require('winston');
+const logger = require('winston');
 const deepMerge = require('deepmerge');
+const configureLogger = require('./logger');
 
 class Server {
   constructor(config) {
     this._config = deepMerge(defaultConfig, config);
-    log.level = this._config.logLevel;
+
+    configureLogger({level: this._config.logLevel});
 
     this._jiraClient = new JiraClient(this._config.jira);
     this._jiraBot = new JiraBot(this._config.slack);
@@ -34,9 +36,9 @@ class Server {
 
       try {
         await this._jiraBot.replyToMessage(message, replyBody);
-        log.info(`Posted Jira ${issueData.key} info to channel #${channel.name}`);
+        logger.info(`Posted Jira ${issueData.key} info to channel #${channel.name}`);
       } catch (error) {
-        log.error('Error while posting issue info to Slack', error);
+        logger.error('Error while posting issue info to Slack', error);
       }
     });
   }
